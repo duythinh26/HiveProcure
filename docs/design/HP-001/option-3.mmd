@@ -1,0 +1,37 @@
+C4Container
+  title Container view - HiveProcure (Option 3: worker-isolated agent, feature-sliced state)
+  Person(buyer, "Procurement user", "Reviews invoices in the browser")
+  System_Boundary(hp, "HiveProcure SPA") {
+    Container_Boundary(main, "Main thread") {
+      Container(shell, "App shell and router", "Vite + React 18 + react-router-dom 6", "src/main.tsx, route tree; src/index.css loaded once")
+      Container(sliceInv, "Invoices feature slice", "React pages + Zustand store", "src/pages/invoices/*, src/store/invoiceSlice.ts - owns invoice state only")
+      Container(sliceVendor, "Vendors feature slice", "React pages + Zustand store", "src/pages/vendors/*, src/store/vendorSlice.ts - owns vendor state only")
+      Container(bus, "Typed event bus", "TypeScript", "src/store/bus.ts - publish/subscribe for cross-slice events and agent replies")
+      Container(client, "Agent client", "TypeScript", "src/agents/invoiceAgent.ts - entry point; spawns the worker, serialises requests, resolves replies")
+      Container(seed, "Seed loader", "TypeScript", "src/data/* - typed fixtures, transferred to the worker at startup")
+    }
+    Container_Boundary(worker, "Worker thread") {
+      Container(runtime, "Agent runtime", "Web Worker + TypeScript", "src/agents/worker/runtime.ts - matching, scoring and extraction loops")
+      ContainerDb(mem, "In-worker working set", "Structured-clone objects", "Seed records and intermediate results held off the UI thread")
+    }
+  }
+  System_Boundary(ci, "Test environment") {
+    Container(vitest, "Vitest", "jsdom + Testing Library", "include tests/**/*.test.{ts,tsx}; environment jsdom")
+    Container(stub, "Worker transport stub", "TypeScript", "tests/support - runs the agent runtime inline in place of postMessage")
+  }
+  Rel(buyer, shell, "Navigates", "HTTPS")
+  Rel(shell, sliceInv, "Renders route /invoices")
+  Rel(shell, sliceVendor, "Renders route /vendors")
+  Rel(sliceInv, client, "Requests an agent pass")
+  Rel(client, runtime, "postMessage request", "structured clone")
+  Rel(runtime, client, "postMessage result", "structured clone")
+  Rel(client, bus, "Publishes agentResult events")
+  Rel(bus, sliceInv, "Notifies subscribed slice")
+  Rel(bus, sliceVendor, "Notifies subscribed slice")
+  Rel(seed, client, "Provides initial fixtures")
+  Rel(client, mem, "Seeds working set at startup")
+  Rel(runtime, mem, "Reads and updates")
+  Rel(vitest, stub, "Installs in place of the worker")
+  Rel(stub, runtime, "Invokes inline")
+  Rel(vitest, sliceInv, "Renders and asserts in jsdom")
+  UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="2")
