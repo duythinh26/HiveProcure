@@ -1,0 +1,18 @@
+C4Container
+  title Container view - HP-004 Option A: Single self-contained pure module
+  Person(dev, "Developer / Vitest suite", "Calls runInvoiceAgent(data) with seed or frozen fixtures")
+  System_Boundary(wb, "Procurement Workbench (app)") {
+    Container(seed, "Seed Data Module", "TypeScript, readonly literals", "Six invoices, purchase orders and goods receipts exported as frozen data")
+    Container(types, "Domain Types", "TypeScript declarations", "Invoice, MatchResult, InvoiceStatus, InvoiceResult")
+    Container(agent, "src/agents/invoiceAgent.ts", "TypeScript pure module", "Exports runInvoiceAgent(data) -> InvoiceResult[]; private helpers for Received filter, three-way match, status derivation and summary text; no imports with side effects")
+    Container(caller, "Exception Review Screen", "React component", "Invokes the agent during render/selector and displays InvoiceResult[]")
+    Container(fixtures, "Purity Test Harness", "Vitest + Object.freeze", "Double-invocation deep-equality check and input mutation check")
+  }
+  Rel(dev, agent, "runInvoiceAgent(data)", "in-process call")
+  Rel(caller, seed, "reads application state", "import")
+  Rel(caller, agent, "runInvoiceAgent(state)", "in-process call")
+  Rel(agent, types, "conforms to", "compile-time only")
+  Rel(fixtures, seed, "freezes and clones", "test setup")
+  Rel(fixtures, agent, "calls twice with same input", "assertion")
+  UpdateRelStyle(dev, agent, $offsetY="-20")
+  UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
