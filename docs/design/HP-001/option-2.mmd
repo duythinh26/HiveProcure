@@ -1,0 +1,36 @@
+C4Container
+  title Container view - HiveProcure (Option 2: ports and adapters around a pure core)
+  Person(buyer, "Procurement user", "Reviews invoices in the browser")
+  Container_Boundary(ui, "Delivery side (adapters in)") {
+    Container(entry, "Composition root", "Vite + React 18 + TypeScript", "src/main.tsx - constructs concrete port implementations and passes them to createStore()")
+    Container(routes, "Routing adapter", "react-router-dom 6", "Route objects; screens receive data only through store selectors")
+    Container(pages, "Screens", "React function components", "src/pages/* - no imports from src/agents or src/data, by convention and lint rule")
+    Container(styles, "Stylesheet", "Plain CSS", "src/index.css - semantic class names, no UI component library")
+  }
+  Container_Boundary(core, "Application core") {
+    Container(ports, "Port contracts", "TypeScript interfaces", "InvoiceAgentPort, SeedRepositoryPort - types only, no runtime code")
+    Container(agent, "Invoice agent implementation", "TypeScript", "src/agents/invoiceAgent.ts - pure function of (input, deps); no global imports")
+  }
+  Container_Boundary(adapters, "Driven side (adapters out)") {
+    Container(store, "Store adapter", "Zustand", "src/store/createStore.ts - the single place ports are invoked and results written to state")
+    Container(repo, "Seed repository", "TypeScript", "src/data/* behind SeedRepositoryPort; replaceable by an HTTP client later")
+  }
+  Container_Boundary(test, "Verification") {
+    Container(vitest, "Vitest", "jsdom + Testing Library", "environment: jsdom, include tests/**/*.test.{ts,tsx}")
+    Container(fakes, "Port fakes", "TypeScript", "tests/** - in-memory InvoiceAgentPort and SeedRepositoryPort doubles")
+  }
+  Rel(buyer, entry, "Loads the SPA", "HTTPS")
+  Rel(entry, routes, "Mounts router with injected store")
+  Rel(entry, store, "Builds with concrete implementations")
+  Rel(routes, pages, "Renders matched screen")
+  Rel(pages, store, "Selects state, invokes actions")
+  Rel(pages, styles, "Uses class names from")
+  Rel(store, ports, "Depends on interfaces, not implementations")
+  Rel(agent, ports, "Implements InvoiceAgentPort")
+  Rel(repo, ports, "Implements SeedRepositoryPort")
+  Rel(store, agent, "Calls through port reference")
+  Rel(store, repo, "Loads seed aggregates through port")
+  Rel(vitest, fakes, "Runs suites that inject")
+  Rel(fakes, store, "Substituted into createStore() under test")
+  Rel(vitest, pages, "Renders screens in jsdom")
+  UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="2")
