@@ -1,0 +1,24 @@
+C4Container
+  title Container view - HP-004 Option C: Declarative rule table read by a tiny interpreter
+  Person(analyst, "Finance analyst", "Edits exception thresholds and wording in the rule table")
+  Person(dev, "Developer / Vitest suite", "Verifies determinism and non-mutation of the input")
+  System_Boundary(wb, "Procurement Workbench (app)") {
+    Container(agent, "src/agents/invoiceAgent.ts", "TypeScript interpreter", "Exports runInvoiceAgent(data); for each Received invoice evaluates the rule table top-down and emits one InvoiceResult")
+    ContainerDb(table, "invoiceRules.table.ts", "Frozen TypeScript data", "Ordered rows of {when: predicate refs, matchResult, status, summaryTemplate}")
+    Container(predicates, "Builtin Predicate Library", "Pure functions keyed by name", "qtyWithinTolerance, priceVariancePct, missingReceipt, duplicateVendorRef and friends")
+    Container(template, "Summary Renderer", "Pure string templating", "Substitutes invoice fields into summaryTemplate with stable formatting and fixed locale")
+    Container(schema, "Rule Table Validator", "TypeScript type guards", "Build-time and test-time check that every row references known predicates and fields")
+    Container(seed, "Seed Data Module", "TypeScript, readonly literals", "Six invoices at status Received plus purchase orders and receipts")
+    Container(ui, "Exception Review Screen", "React component", "Renders InvoiceResult[] and can show the matched rule id")
+  }
+  Rel(analyst, table, "authors and edits rows", "code review")
+  Rel(dev, agent, "runInvoiceAgent(frozen seed) twice", "in-process call")
+  Rel(dev, schema, "runs table validation suite", "test")
+  Rel(agent, table, "reads ordered rows", "import, read-only")
+  Rel(agent, predicates, "resolves predicate by name", "lookup")
+  Rel(agent, template, "renders summary", "pure call")
+  Rel(schema, table, "validates shape and references", "")
+  Rel(schema, predicates, "checks names exist", "")
+  Rel(ui, agent, "runInvoiceAgent(state)", "in-process call")
+  Rel(agent, seed, "receives as argument", "read-only")
+  UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
