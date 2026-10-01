@@ -1,0 +1,30 @@
+C4Container
+  title Container view - HiveProcure (Option 1: flat single-bundle SPA)
+  Person(buyer, "Procurement user", "Reviews invoices in the browser")
+  System_Boundary(hp, "HiveProcure web application") {
+    Container(shell, "App shell", "Vite 5 + React 18 + TypeScript", "index.html, src/main.tsx, src/App.tsx; imports src/index.css as the only stylesheet")
+    Container(router, "Route table", "react-router-dom 6", "createBrowserRouter wiring paths to screen components")
+    Container(pages, "Screens", "React function components", "src/pages/*.tsx - read state via Zustand selectors, dispatch actions")
+    Container(store, "Single global store", "Zustand", "src/store/useAppStore.ts - all state and all actions in one create() call")
+    Container(agent, "Invoice agent", "TypeScript module", "src/agents/invoiceAgent.ts - exported async function imported directly by store actions")
+    Container(seed, "Seed data", "TypeScript literals", "src/data/*.ts - typed arrays bundled at build time")
+    Container(css, "Stylesheet", "Plain CSS", "src/index.css - hand-written classes, no UI framework")
+  }
+  System_Boundary(tooling, "Developer tooling") {
+    Container(vite, "Dev server and bundler", "Vite", "vite dev / vite build, TS via esbuild")
+    Container(vitest, "Test runner", "Vitest + jsdom + Testing Library", "include: tests/**/*.test.{ts,tsx}")
+    Container(tests, "Test suite", "TypeScript", "tests/** - renders real pages against the real store and real agent")
+  }
+  Rel(buyer, shell, "Loads and interacts with", "HTTPS")
+  Rel(shell, router, "Mounts")
+  Rel(shell, css, "Imports once at startup")
+  Rel(router, pages, "Renders matched screen")
+  Rel(pages, store, "useAppStore(selector) / calls actions", "in-process")
+  Rel(store, agent, "Calls runInvoiceAgent()", "direct import, main thread")
+  Rel(store, seed, "Hydrates initial state from", "direct import")
+  Rel(agent, seed, "Reads reference records from", "direct import")
+  Rel(vite, shell, "Serves and bundles")
+  Rel(vitest, tests, "Executes")
+  Rel(tests, pages, "Renders in jsdom")
+  Rel(tests, store, "Asserts on state after actions")
+  UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
