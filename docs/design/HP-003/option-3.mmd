@@ -1,0 +1,38 @@
+C4Container
+  title Option C - Canonical table source with derived seed projections (HP-003)
+  Person(clerk, "AP Clerk", "Views /invoices and an invoice detail")
+  Person(author, "Spec Author", "Maintains the §3 rows in exactly one place")
+  System_Boundary(spa, "Three-Way Match SPA (static bundle, zero I/O)") {
+    Container(ui, "Invoice UI", "TypeScript, React, React Router", "List and detail screens; unaware of the projection layer")
+    Container_Boundary(src, "src/data (required module surface)") {
+      Container(tol, "tolerances.ts", "projection", "Maps canonical tolerance rows: Office Supplies 3%/0 units; IT Hardware 2%/0 units")
+      Container(sup, "suppliers.ts", "projection", "Maps canonical supplier rows: SUP-001 Toronto ON, SUP-002 Ottawa ON")
+      Container(po, "purchaseOrders.ts", "projection", "Five POs, each with its single item/qty/unitPrice line")
+      Container(rec, "receipts.ts", "projection", "Four receipts; PO-2215 simply has no canonical receipt row")
+      Container(inv, "invoices.ts", "projection + join", "Six invoices, status Received, line item text resolved from the referenced PO line")
+    }
+    Container_Boundary(core, "src/data/internal") {
+      Container(canon, "tables.ts", "Single normalised record set", "The §3 tables as one typed source of truth: tolerances, suppliers, poLines, receipts, invoiceHeaders")
+      Container(build, "project.ts", "Pure build functions", "Shapes canonical rows into the five exported module shapes; resolves invoice item text by PO lookup")
+      Container(types, "types.ts", "TypeScript types", "Row types and the closed InvoiceStatus union")
+    }
+  }
+  Container(tests, "Spec suite", "Vitest + jsdom", "Compares each projected row to the §3 table; mounts app with fetch/XHR stubbed to fail")
+  Rel(clerk, ui, "Navigates", "in-browser")
+  Rel(author, canon, "Edits the one canonical row set")
+  Rel(ui, inv, "Imports")
+  Rel(ui, po, "Imports")
+  Rel(ui, rec, "Imports")
+  Rel(ui, sup, "Imports")
+  Rel(ui, tol, "Imports")
+  Rel(tol, build, "Built by")
+  Rel(sup, build, "Built by")
+  Rel(po, build, "Built by")
+  Rel(rec, build, "Built by")
+  Rel(inv, build, "Built by; item text joined from PO line")
+  Rel(build, canon, "Reads canonical rows")
+  Rel(build, types, "Emits typed rows")
+  Rel(canon, types, "Typed by")
+  Rel(tests, src, "Asserts projected output field for field")
+  Rel(tests, ui, "Mounts /invoices and detail, asserts no request attempted")
+  UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="2")
