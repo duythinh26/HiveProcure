@@ -1,0 +1,36 @@
+C4Container
+  title Option B - Schema-validated seed modules with import-time invariants (HP-003)
+  Person(clerk, "AP Clerk", "Views /invoices and invoice detail")
+  Person(dev, "Developer", "Edits literals; relies on schema errors as the safety net")
+  System_Boundary(spa, "Three-Way Match SPA (static bundle, no backend, no network, no auth)") {
+    Container(ui, "Invoice UI", "TypeScript, React, React Router", "List and detail screens; render parsed, pre-validated exports")
+    Container_Boundary(schema, "src/data/schema") {
+      Container(zod, "row schemas", "Zod-style schema objects", "Tolerance, Supplier, PurchaseOrder, Receipt, Invoice; status as a closed enum of four values")
+      Container(invariants, "invariants.ts", "TypeScript assertions", "assertPo2215HasNoReceipt, assertInvoiceItemTextMatchesPo, assertAllInvoicesReceived")
+    }
+    Container_Boundary(data, "src/data (seed modules)") {
+      Container(tol, "tolerances.ts", "literals + parse()", "Office Supplies 3%/0 units; IT Hardware 2%/0 units - exported only after parse")
+      Container(sup, "suppliers.ts", "literals + parse()", "SUP-001 Toronto ON; SUP-002 Ottawa ON")
+      Container(po, "purchaseOrders.ts", "literals + parse()", "Five POs with one line each")
+      Container(rec, "receipts.ts", "literals + parse()", "Four receipts; invariant rejects any PO-2215 row")
+      Container(inv, "invoices.ts", "literals + parse() + cross-check", "Six Received invoices; item text asserted equal to the matching PO line")
+    }
+  }
+  Container(tests, "Spec suite", "Vitest + jsdom", "Imports modules (parse runs), checks §3 fields, stubs fetch/XMLHttpRequest to fail")
+  Rel(clerk, ui, "Navigates", "in-browser")
+  Rel(dev, data, "Edits row literals")
+  Rel(ui, inv, "Imports validated invoices")
+  Rel(ui, po, "Imports validated POs")
+  Rel(ui, rec, "Imports validated receipts")
+  Rel(ui, sup, "Imports validated suppliers")
+  Rel(ui, tol, "Imports validated tolerances")
+  Rel(tol, zod, "parse at module load")
+  Rel(sup, zod, "parse at module load")
+  Rel(po, zod, "parse at module load")
+  Rel(rec, zod, "parse at module load")
+  Rel(inv, zod, "parse at module load")
+  Rel(rec, invariants, "PO-2215 receipt-free check")
+  Rel(inv, invariants, "status + item-text equality checks")
+  Rel(tests, data, "Asserts fields and that invalid seeds throw")
+  Rel(tests, ui, "Mounts and navigates with failing network stubs")
+  UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="2")
