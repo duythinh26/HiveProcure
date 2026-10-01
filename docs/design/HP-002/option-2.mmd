@@ -1,0 +1,45 @@
+C4Container
+  title Option B - Layered build/test configs plus an executable script contract
+  Person(dev, "Developer", "Edits code and runs the npm scripts")
+  System_Ext(registry, "npm registry", "Dependency source resolved via npm ci")
+  System_Boundary(repo, "Repository") {
+    Container_Boundary(surface, "Script contract surface") {
+      Container(manifest, "package.json", "npm manifest", "Five exact script strings and nothing else of behaviour; thin entry point")
+      Container(lockfile, "package-lock.json", "npm lockfile", "Byte-stable dependency graph for clean checkouts")
+      Container(contract, "test/package-scripts.test.ts", "Vitest contract spec", "Reads package.json and asserts dev, start, build, typecheck and test equal the specified commands")
+    }
+    Container_Boundary(tooling, "Tool configuration layer") {
+      Container(base, "vite.config.base.ts", "Shared config module", "Plugins, resolve aliases and env handling imported by both tool configs")
+      Container(viteconf, "vite.config.ts", "Build config", "mergeConfig of base plus dev-server and build-only options")
+      Container(vitestconf, "vitest.config.ts", "Test config", "mergeConfig of base plus jsdom environment, setup file, include globs and reporters")
+      Container(setup, "test/setup.ts", "Vitest setup module", "Matchers and DOM shims loaded before each suite")
+      Container(tsbase, "tsconfig.base.json", "Shared compiler options", "strict settings inherited by the project files")
+      Container(tsroot, "tsconfig.json", "Solution project", "Includes the app and test projects; the entry point for tsc --noEmit")
+    }
+    Container_Boundary(code, "Application code") {
+      Container(src, "src/", "TypeScript sources", "Modules under test and the build entry")
+      Container(specs, "test/", "Vitest specs", "Behavioural specs separated from sources")
+    }
+    Container(bin, "node_modules/.bin", "Installed CLIs", "vite, vitest and tsc binaries")
+  }
+  Container_Boundary(hb, "Verification harness") {
+    Container(workflow, "CI workflow", "Pipeline definition", "npm ci, then npm test, then npm run build; fails on any non-zero exit code")
+  }
+  Rel(dev, manifest, "Runs scripts through")
+  Rel(workflow, manifest, "Executes the two-step sequence against")
+  Rel(workflow, lockfile, "Installs exactly from")
+  Rel(manifest, bin, "Resolves tool binaries from")
+  Rel(bin, registry, "Fetched from")
+  Rel(bin, viteconf, "vite build reads")
+  Rel(bin, vitestconf, "vitest run reads")
+  Rel(bin, tsroot, "tsc --noEmit reads")
+  Rel(viteconf, base, "Extends")
+  Rel(vitestconf, base, "Extends")
+  Rel(vitestconf, setup, "Loads before suites")
+  Rel(vitestconf, specs, "Collects")
+  Rel(vitestconf, contract, "Collects")
+  Rel(contract, manifest, "Asserts script strings of")
+  Rel(tsroot, tsbase, "Inherits options from")
+  Rel(tsroot, src, "Type checks")
+  Rel(tsroot, specs, "Type checks")
+  Rel(src, specs, "Exercised by")
