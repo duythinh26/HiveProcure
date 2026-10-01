@@ -1,0 +1,29 @@
+C4Container
+  title Container view - HP-004 Option B: Composable rule pipeline with a default rule set
+  Person(dev, "Developer / Vitest suite", "Tests the agent end to end and each rule in isolation")
+  System_Boundary(wb, "Procurement Workbench (app)") {
+    Container(agent, "src/agents/invoiceAgent.ts", "TypeScript composition root", "Exports runInvoiceAgent(data); selects invoices with status Received and folds each through the default rule pipeline")
+    Container_Boundary(rules, "src/agents/rules (pure rule modules)") {
+      Container(r1, "receivedFilter.ts", "Pure predicate", "Keeps only invoices whose status is Received")
+      Container(r2, "threeWayMatch.ts", "Pure function", "Compares invoice against purchase order and goods receipt lines")
+      Container(r3, "toleranceRule.ts", "Pure function", "Applies price and quantity tolerance bands to the raw match")
+      Container(r4, "classify.ts", "Pure function", "Maps match evidence to match result and exception status")
+      Container(r5, "summarise.ts", "Pure function", "Renders a deterministic human-readable summary string")
+    }
+    Container(registry, "defaultRules.ts", "TypeScript array", "Ordered, frozen list of rule functions bound at module load")
+    Container(types, "Pipeline Types", "TypeScript declarations", "RuleFn, RuleContext, InvoiceResult")
+    Container(seed, "Seed Data Module", "TypeScript, readonly literals", "Six Received invoices plus matching documents")
+    Container(ui, "Exception Review Screen", "React component", "Consumes InvoiceResult[]")
+  }
+  Rel(dev, agent, "runInvoiceAgent(frozen seed)", "in-process call")
+  Rel(dev, r2, "unit tests single rule", "in-process call")
+  Rel(agent, registry, "iterates ordered rules", "import")
+  Rel(registry, r1, "step 1", "")
+  Rel(registry, r2, "step 2", "")
+  Rel(registry, r3, "step 3", "")
+  Rel(registry, r4, "step 4", "")
+  Rel(registry, r5, "step 5", "")
+  Rel(agent, types, "conforms to", "compile-time only")
+  Rel(ui, agent, "runInvoiceAgent(state)", "in-process call")
+  Rel(agent, seed, "receives as argument", "read-only")
+  UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
