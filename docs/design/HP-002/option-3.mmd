@@ -1,0 +1,42 @@
+C4Container
+  title Option C - Workspaces monorepo with the five scripts pinned at the root
+  Person(dev, "Developer", "Always runs scripts from the repository root")
+  System_Ext(registry, "npm registry", "Dependency source for the hoisted install")
+  System_Ext(harness, "Verification harness", "Runs npm test then npm run build at the root and checks exit codes")
+  System_Boundary(mono, "Monorepo") {
+    Container_Boundary(root, "Repository root (workspace host)") {
+      Container(rootpkg, "package.json", "npm manifest with workspaces", "Five exact scripts; workspaces glob packages/*; all dev tooling declared here")
+      Container(lockfile, "package-lock.json", "npm lockfile", "Single lockfile covering every workspace package")
+      Container(rootvite, "vite.config.ts", "Root Vite config", "Sets root to the app package and directs build output back to the root dist")
+      Container(rootvitest, "vitest.workspace.ts", "Vitest workspace definition", "Enumerates which packages contribute suites to a single vitest run")
+      Container(roottsc, "tsconfig.json", "Root TypeScript project", "Includes every workspace src and test folder for one tsc --noEmit pass")
+      Container(rootbin, "node_modules/.bin", "Hoisted CLIs", "vite, vitest and tsc shared by all packages")
+      Container(dist, "dist/", "Build output", "Single bundle emitted by the root build script")
+    }
+    Container_Boundary(apppkg, "packages/app") {
+      Container(appmanifest, "package.json", "Workspace manifest", "Name and dependencies only; carries no duplicate of the five scripts")
+      Container(appsrc, "src/", "TypeScript sources", "Application entry and UI modules")
+      Container(appspecs, "src/__tests__/", "Vitest specs", "Suites collected through the workspace definition")
+    }
+    Container_Boundary(sharedpkg, "packages/shared") {
+      Container(sharedmanifest, "package.json", "Workspace manifest", "Internal library consumed by the app through the workspace link")
+      Container(sharedsrc, "src/", "TypeScript sources", "Shared utilities and types")
+      Container(sharedspecs, "src/__tests__/", "Vitest specs", "Library suites in the same single run")
+    }
+  }
+  Rel(dev, rootpkg, "Runs npm scripts at")
+  Rel(harness, rootpkg, "Executes test then build against")
+  Rel(rootpkg, lockfile, "Install reproduced by")
+  Rel(rootpkg, rootbin, "Resolves hoisted binaries from")
+  Rel(rootbin, registry, "Installed from")
+  Rel(rootbin, rootvite, "vite build reads")
+  Rel(rootbin, rootvitest, "vitest run reads")
+  Rel(rootbin, roottsc, "tsc --noEmit reads")
+  Rel(rootvite, appsrc, "Bundles entry from")
+  Rel(rootvite, dist, "Emits into")
+  Rel(rootvitest, appspecs, "Collects")
+  Rel(rootvitest, sharedspecs, "Collects")
+  Rel(roottsc, appsrc, "Type checks")
+  Rel(roottsc, sharedsrc, "Type checks")
+  Rel(appmanifest, sharedmanifest, "Depends on", "workspace link")
+  Rel(appsrc, sharedsrc, "Imports")
