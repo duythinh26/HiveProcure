@@ -1,0 +1,27 @@
+C4Container
+  title Option A - Single-package Vite app with one unified config
+  Person(dev, "Developer", "Runs npm install, npm test and npm run build locally")
+  System_Ext(registry, "npm registry", "Source of the dependency graph")
+  System_Ext(harness, "Verification harness", "Runs npm test then npm run build and checks both exit codes are 0")
+  Container_Boundary(repo, "Repository root (single npm package)") {
+    Container(manifest, "package.json", "npm manifest", "Exactly five scripts: dev, start, build, typecheck, test - each a literal tool invocation with no wrapper")
+    Container(lockfile, "package-lock.json", "npm lockfile", "Pins the graph that npm install reproduces on a clean checkout")
+    Container(viteconf, "vite.config.ts", "Vite + Vitest config (TypeScript)", "One defineConfig: plugins, resolve aliases and an inline test block for Vitest")
+    Container(tsconf, "tsconfig.json", "TypeScript project", "Single project covering src, specs and config files; consumed by tsc --noEmit")
+    Container(src, "src/", "TypeScript sources", "App entry and modules")
+    Container(specs, "src/*.test.ts", "Vitest specs", "Colocated specs, node environment, no setup file")
+    Container(bin, "node_modules/.bin", "Installed CLIs", "vite, vitest and tsc resolved by npm run")
+    Container(dist, "dist/", "Build output", "Artifacts produced by vite build")
+  }
+  Rel(dev, manifest, "Invokes", "npm run dev / start / test / build")
+  Rel(harness, manifest, "Executes script sequence against")
+  Rel(manifest, bin, "Resolves tool binaries from")
+  Rel(bin, registry, "Installed from", "npm install guided by lockfile")
+  Rel(manifest, lockfile, "Install reproduced by")
+  Rel(bin, viteconf, "vite and vitest both read")
+  Rel(bin, tsconf, "tsc --noEmit reads")
+  Rel(viteconf, specs, "Discovers and executes")
+  Rel(tsconf, src, "Type checks")
+  Rel(tsconf, specs, "Type checks")
+  Rel(src, specs, "Imported by")
+  Rel(viteconf, dist, "vite build emits")
