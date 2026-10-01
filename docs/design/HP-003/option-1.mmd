@@ -1,0 +1,33 @@
+C4Container
+  title Option A - Flat literal seed modules (HP-003)
+  Person(clerk, "AP Clerk", "Views /invoices and invoice detail in the browser")
+  Person(dev, "Developer / Reviewer", "Diffs each module line-by-line against the §3 tables")
+  System_Boundary(spa, "Three-Way Match SPA (static bundle, no backend, no auth)") {
+    Container(ui, "Invoice UI", "TypeScript, React, React Router", "Invoice list and invoice detail screens; renders from imported literals only")
+    Container(sel, "In-memory selectors", "TypeScript functions", "findPoById, receiptsForPo, toleranceForCategory - pure array joins, no I/O")
+    Container_Boundary(data, "src/data (seed modules)") {
+      Container(types, "types.ts", "TypeScript types", "Row interfaces + InvoiceStatus union: Received | Approved for payment | On hold | Rejected")
+      Container(tol, "tolerances.ts", "as const array", "Office Supplies +/-3% price, 0 units qty; IT Hardware +/-2%, 0 units")
+      Container(sup, "suppliers.ts", "as const array", "SUP-001 Great Lakes Office Supply (Toronto, ON); SUP-002 Maple Circuit IT (Ottawa, ON)")
+      Container(po, "purchaseOrders.ts", "as const array", "Five POs: supplier, category, one line of item/qty/unitPrice")
+      Container(rec, "receipts.ts", "as const array", "Four receipts; no row references PO-2215")
+      Container(inv, "invoices.ts", "as const array", "Six invoices, all status Received, one line each with item text copied from the PO line")
+    }
+  }
+  Container(tests, "Field-for-field spec suite", "Vitest + jsdom", "Table-literal expectations, item-text equality check, fetch/XHR stubbed to throw")
+  Rel(clerk, ui, "Navigates /invoices, opens a detail", "in-browser")
+  Rel(dev, data, "Transcribes and reviews against §3")
+  Rel(ui, sel, "Asks for joined view models")
+  Rel(sel, po, "Imports")
+  Rel(sel, rec, "Imports")
+  Rel(sel, inv, "Imports")
+  Rel(sel, tol, "Imports")
+  Rel(sel, sup, "Imports")
+  Rel(tol, types, "Typed by")
+  Rel(sup, types, "Typed by")
+  Rel(po, types, "Typed by")
+  Rel(rec, types, "Typed by")
+  Rel(inv, types, "Typed by")
+  Rel(tests, data, "Asserts every field; duplicated item text compared across modules")
+  Rel(tests, ui, "Mounts, navigates, asserts zero network attempts")
+  UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
