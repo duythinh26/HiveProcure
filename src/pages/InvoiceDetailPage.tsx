@@ -1,13 +1,23 @@
 import { Link, useParams } from 'react-router-dom'
-import { useInvoiceStore } from '../store/invoiceStore'
-import { invoiceTotal } from '../data/seedInvoices'
+import {
+  findInvoiceById,
+  findPoById,
+  findSupplierById,
+  invoiceTotal,
+  purchaseOrderTotal,
+  receiptsForPo,
+  toleranceForCategory
+} from '../data/selectors'
+import { statusClass } from './InvoicesPage'
 
+/**
+ * HP-003 — one invoice, joined in memory to its purchase order, its goods
+ * receipts (PO-2215 has none) and the tolerance for its category. Every value
+ * comes from an imported literal; nothing here performs I/O.
+ */
 export default function InvoiceDetailPage() {
   const { invoiceId } = useParams<{ invoiceId: string }>()
-  const invoice = useInvoiceStore((state) =>
-    state.invoices.find((candidate) => candidate.id === invoiceId)
-  )
-  const finding = useInvoiceStore((state) => (invoiceId ? state.findings[invoiceId] : undefined))
+  const invoice = findInvoiceById(invoiceId)
 
   if (!invoice) {
     return (
@@ -19,38 +29,45 @@ export default function InvoiceDetailPage() {
     )
   }
 
+  const po = findPoById(invoice.poId)
+  const supplier = findSupplierById(po?.supplierId)
+  const poReceipts = receiptsForPo(invoice.poId)
+  const tolerance = toleranceForCategory(po?.category)
+
   return (
     <section className="page">
       <nav className="breadcrumb">
-        <Link to="/invoices">Invoices</Link> <span aria-hidden="true">/</span> {invoice.number}
+        <Link to="/invoices">Invoices</Link> <span aria-hidden="true">/</span> {invoice.id}
       </nav>
 
-      <h1>{invoice.number}</h1>
+      <h1>{invoice.id}</h1>
 
       <dl className="detail-grid">
-        <dt>Vendor</dt>
-        <dd>{invoice.vendor}</dd>
         <dt>Status</dt>
         <dd>
-          <span className={`badge badge-${invoice.status}`}>{invoice.status}</span>
+          <span className={statusClass(invoice.status)} data-testid="invoice-status">
+            {invoice.status}
+          </span>
         </dd>
         <dt>Purchase order</dt>
-        <dd>{invoice.poNumber ?? 'none'}</dd>
-        <dt>Issued</dt>
-        <dd>{invoice.issuedOn}</dd>
-        <dt>Due</dt>
-        <dd>{invoice.dueOn}</dd>
-        <dt>Provenance</dt>
-        <dd>
-          <span className="badge badge-source">{invoice.source}</span>
+        <dd data-testid="invoice-po">{invoice.poId}</dd>
+        <dt>Supplier</dt>
+        <dd>{supplier ? `${supplier.name} — ${supplier.city}, ${supplier.province}` : '—'}</dd>
+        <dt>Category</dt>
+        <dd>{po ? po.category : '—'}</dd>
+        <dt>Tolerance</dt>
+        <dd data-testid="invoice-tolerance">
+          {tolerance
+            ? `±${tolerance.pricePercent}% price / ${tolerance.quantityUnits} units quantity`
+            : '—'}
         </dd>
       </dl>
 
-      <h2>Lines</h2>
+      <h2>Invoice lines</h2>
       <table className="table">
         <thead>
           <tr>
-            <th scope="col">Description</th>
+            <th scope="col">Item</th>
             <th scope="col">Qty</th>
             <th scope="col">Unit price</th>
             <th scope="col">Line total</th>
@@ -58,8 +75,8 @@ export default function InvoiceDetailPage() {
         </thead>
         <tbody>
           {invoice.lines.map((line) => (
-            <tr key={line.id}>
-              <td>{line.description}</td>
+            <tr key={`${invoice.id}-${line.item}`}>
+              <td>{line.item}</td>
               <td className="numeric">{line.quantity}</td>
               <td className="numeric">{line.unitPrice.toFixed(2)}</td>
               <td className="numeric">{(line.quantity * line.unitPrice).toFixed(2)}</td>
@@ -72,26 +89,66 @@ export default function InvoiceDetailPage() {
               Total
             </th>
             <td className="numeric" data-testid="invoice-total">
-              {invoiceTotal(invoice).toFixed(2)} {invoice.currency}
+              {invoiceTotal(invoice).toFixed(2)}
             </td>
           </tr>
         </tfoot>
       </table>
 
-      <h2>Agent assessment</h2>
-      {finding ? (
-        <div className="panel" data-testid="agent-finding">
-          <p>
-            Decision: <span className={`badge badge-${finding.decision}`}>{finding.decision}</span>
-          </p>
-          <ul>
-            {finding.reasons.map((reason) => (
-              <li key={reason}>{reason}</li>
+      <h2>Purchase order</h2>
+      {po ? (
+        <table className="table">
+          <thead>
+            <tr>
+              <th scope="col">PO</th>
+              <th scope="col">Item</th>
+              <th scope="col">Qty</th>
+              <th scope="col">Unit price</th>
+              <th scope="col">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {po.lines.map((line) => (
+              <tr key={`${po.id}-${line.item}`}>
+                <td>{po.id}</td>
+                <td>{line.item}</td>
+                <td className="numeric">{line.quantity}</td>
+                <td className="numeric">{line.unitPrice.toFixed(2)}</td>
+                <td className="numeric">{purchaseOrderTotal(po).toFixed(2)}</td>
+              </tr>
             ))}
-          </ul>
-        </div>
+          </tbody>
+        </table>
       ) : (
-        <p className="muted">The agent has not reviewed this invoice yet.</p>
+        <p className="muted">No purchase order {invoice.poId} is loaded.</p>
+      )}
+
+      <h2>Goods receipts</h2>
+      {poReceipts.length === 0 ? (
+        <p className="muted" data-testid="no-receipts">
+          No goods receipt recorded against {invoice.poId}.
+        </p>
+      ) : (
+        <table className="table">
+          <thead>
+            <tr>
+              <th scope="col">Receipt</th>
+              <th scope="col">Item</th>
+              <th scope="col">Qty received</th>
+            </tr>
+          </thead>
+          <tbody>
+            {poReceipts.flatMap((receipt) =>
+              receipt.lines.map((line) => (
+                <tr key={`${receipt.id}-${line.item}`} data-testid={`receipt-row-${receipt.id}`}>
+                  <td>{receipt.id}</td>
+                  <td>{line.item}</td>
+                  <td className="numeric">{line.quantity}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       )}
     </section>
   )
