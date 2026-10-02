@@ -1,0 +1,208 @@
+/* HiveProcure - the whole stylesheet. Plain CSS, hand written, no UI framework. */
+
+:root {
+  --hp-ink: #1d2433;
+  --hp-muted: #697586;
+  --hp-line: #dfe3eb;
+  --hp-surface: #ffffff;
+  --hp-page: #f5f7fa;
+  --hp-accent: #b7791f;
+  --hp-accent-soft: #fdf6e3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--hp-page);
+  color: var(--hp-ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 14px 28px;
+  background: var(--hp-surface);
+  border-bottom: 1px solid var(--hp-line);
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--hp-accent);
+}
+
+.app-nav a {
+  color: var(--hp-muted);
+  text-decoration: none;
+  padding: 4px 2px;
+  border-bottom: 2px solid transparent;
+}
+
+.app-nav a.active {
+  color: var(--hp-ink);
+  border-bottom-color: var(--hp-accent);
+}
+
+.app-main {
+  flex: 1;
+  padding: 28px;
+}
+
+.app-footer {
+  padding: 14px 28px;
+  color: var(--hp-muted);
+  border-top: 1px solid var(--hp-line);
+}
+
+.page {
+  max-width: 980px;
+  margin: 0 auto;
+  background: var(--hp-surface);
+  border: 1px solid var(--hp-line);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+h1 {
+  font-size: 22px;
+  margin: 0 0 4px;
+}
+
+h2 {
+  font-size: 16px;
+  margin: 28px 0 8px;
+}
+
+.muted {
+  color: var(--hp-muted);
+}
+
+.button {
+  font: inherit;
+  padding: 8px 14px;
+  border: 1px solid var(--hp-accent);
+  border-radius: 6px;
+  background: var(--hp-accent-soft);
+  color: var(--hp-accent);
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--hp-line);
+}
+
+.table thead th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--hp-muted);
+}
+
+.table .numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--hp-line);
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.badge-approved,
+.badge-approve {
+  background: #e7f6ed;
+  border-color: #b7e2c6;
+}
+
+.badge-received,
+.badge-review {
+  background: #fdf6e3;
+  border-color: #ecd9a6;
+}
+
+.badge-disputed,
+.badge-hold {
+  background: #fdecec;
+  border-color: #efc0c0;
+}
+
+.badge-draft,
+.badge-source {
+  background: #eef1f6;
+}
+
+.breadcrumb {
+  color: var(--hp-muted);
+  margin-bottom: 10px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 6px 16px;
+  margin: 14px 0 0;
+}
+
+.detail-grid dt {
+  color: var(--hp-muted);
+}
+
+.detail-grid dd {
+  margin: 0;
+}
+
+.panel {
+  border: 1px solid var(--hp-line);
+  border-radius: 6px;
+  padding: 12px 16px;
+  background: var(--hp-page);
+}
+
+a {
+  color: #1f5fa9;
+}
