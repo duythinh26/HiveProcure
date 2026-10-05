@@ -1,0 +1,23 @@
+C4Container
+  title Container view - Option A: ordered rule chain compiled into one matching service
+  Person(ap, "AP Analyst", "Reviews match results and exceptions")
+  System_Ext(erp, "ERP / Procurement system", "Source of purchase orders, goods receipts and supplier invoices")
+  System_Boundary(mp, "Invoice Matching Platform") {
+    Container(ui, "Exception Review UI", "Web app", "Shows the single match result with the figures that produced it")
+    Container(api, "Matching Service API", "HTTP service", "Accepts evaluate-invoice calls and returns exactly one result per invoice line")
+    Container(pair, "Pairing and Variance Module", "In-process library", "Pairs invoice line to PO line by identical item text, sums that PO item's receipts to a received quantity of 0 or more, computes priceVariance and quantityGap")
+    Container(chain, "Ordered Rule Chain", "In-process library", "Fixed sequence: DUPLICATE, MISSING_RECEIPT, QUANTITY, PRICE_OUT, PRICE_WITHIN, MATCHED; returns on first match")
+    ContainerDb(db, "Procurement Database", "PostgreSQL", "PO headers and lines, receipts, invoices, category tolerance rows, written match results")
+    Container(ingest, "Ingestion Job", "Scheduled batch worker", "Pulls POs, receipts and invoices from the ERP into the database")
+  }
+  Rel(ap, ui, "Reviews results and exceptions", "HTTPS")
+  Rel(ui, api, "Requests evaluation of an invoice", "JSON over HTTPS")
+  Rel(erp, ingest, "Supplies POs, receipts and invoices", "File / API")
+  Rel(ingest, db, "Loads source records", "SQL")
+  Rel(api, pair, "Builds the line fact: PO line, received quantity, variances")
+  Rel(pair, db, "Reads PO line and sums receipts for the item", "SQL aggregate")
+  Rel(api, chain, "Evaluates the fact in fixed precedence order")
+  Rel(chain, db, "Searches earlier invoice with same supplier, PO and total within prior 30 days", "SQL")
+  Rel(chain, db, "Reads price and quantity tolerance for the PO category", "SQL")
+  Rel(api, db, "Writes the chosen match result", "SQL")
+  UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
