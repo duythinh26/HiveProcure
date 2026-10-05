@@ -1,0 +1,28 @@
+C4Container
+  title Container view - Option B: data-driven decision table with versioned tolerance catalogue
+  Person(ap, "AP Analyst", "Reviews match results")
+  Person(steward, "Policy Steward", "Authors rule order and category tolerances")
+  System_Ext(erp, "ERP / Procurement system", "Purchase orders, receipts, supplier invoices")
+  System_Boundary(mp, "Invoice Matching Platform") {
+    Container(ui, "Exception Review UI", "Web app", "Shows result plus the rule id and rule-set version that decided it")
+    Container(admin, "Rule Authoring Console", "Web app", "Edits rule precedence and per-category price and quantity tolerances, publishes a new version")
+    Container(registry, "Rule Registry Service", "HTTP service", "Validates, versions and publishes rule sets; serves the active version")
+    ContainerDb(regdb, "Rule Store", "PostgreSQL", "Ordered rule definitions, condition expressions, category tolerance catalogue, version history")
+    Container(evaluator, "Generic Rule Evaluator", "HTTP service", "Loads the active ordered rule set and returns the first rule whose condition holds, else MATCHED")
+    Container(factbuilder, "Fact Builder", "HTTP service", "Pairs invoice line to PO line by item text, sums receipts, computes priceVariance and quantityGap, attaches category and duplicate candidates")
+    Container(cache, "Rule Set Cache", "Redis", "Holds the active rule set and tolerance catalogue for fast evaluation")
+    ContainerDb(opsdb, "Operational Database", "PostgreSQL", "POs, receipts, invoices and decided results with rule-set version stamp")
+  }
+  Rel(ap, ui, "Reviews results", "HTTPS")
+  Rel(steward, admin, "Edits and publishes rules and tolerances", "HTTPS")
+  Rel(admin, registry, "Submits rule-set drafts", "JSON over HTTPS")
+  Rel(registry, regdb, "Stores and versions rule sets", "SQL")
+  Rel(registry, cache, "Publishes active rule set", "Redis protocol")
+  Rel(erp, opsdb, "Feeds POs, receipts and invoices", "Batch / API")
+  Rel(ui, factbuilder, "Requests evaluation of an invoice", "JSON over HTTPS")
+  Rel(factbuilder, opsdb, "Reads PO line, sums receipts, finds prior invoices in the 30-day window", "SQL")
+  Rel(factbuilder, evaluator, "Sends the prepared fact", "JSON over HTTPS")
+  Rel(evaluator, cache, "Reads active ordered rules and category tolerances", "Redis protocol")
+  Rel(evaluator, registry, "Falls back on cache miss", "JSON over HTTPS")
+  Rel(evaluator, opsdb, "Writes result with rule id and version", "SQL")
+  UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
